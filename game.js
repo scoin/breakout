@@ -7,8 +7,8 @@ var paddleShape = function(x, y){
 	this.speed = 40;
 }
 
-paddleShape.prototype.move = function(m){
-	this.x += (this.speed * m);
+paddleShape.prototype.move = function(x){
+	this.x = x;
 }
 
 var ballShape = function(x,y){
@@ -74,11 +74,8 @@ var blockShape = function(x, y, color){
 
 var Game = function(){
 	this.controls = {
-		"left": 'A',
-		"right": 'D',
 		"reset": 'R'
 	}
-	this.fps = 50;
 }
 
 Game.prototype.start = function(){
@@ -176,20 +173,15 @@ Game.prototype.clearBlock = function(block){
 
 Game.prototype.run = function(){
 	var game = this;
+	window.onmousemove = function(event){
+		if(event.clientX + game.paddle.width < game.width && event.clientX > 0){
+			game.clearPaddle();
+			game.paddle.move(event.clientX);
+			game.drawPaddle();
+		}
+	}
 	window.onkeydown = function(event){
-		if(String.fromCharCode(event.which) == game.controls.left){
-			if(game.paddle.x - game.paddle.speed > 0){
-				game.clearPaddle();
-				game.paddle.move(-1);
-				game.drawPaddle();
-			}
-		} else if(String.fromCharCode(event.which) == game.controls.right){
-			if(game.paddle.x + game.paddle.width + game.paddle.speed <= game.width){
-				game.clearPaddle();
-				game.paddle.move(1);
-				game.drawPaddle();
-			}	
-		} else if(String.fromCharCode(event.which) == game.controls.reset){
+		if(String.fromCharCode(event.which) == game.controls.reset){
 				game.initBall();
 				game.drawBall();
 		}
