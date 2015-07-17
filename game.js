@@ -19,43 +19,50 @@ var ballShape = function(x,y){
 	this.x = x;
 	this.y = y;
 	this.xDirection = 0;
-	this.yDirection = 5;
+	this.yDirection = 1;
+	this.ySpeed = 5;
 }
 
 ballShape.prototype.move = function(){
 	var xloc = this.x + 2 * this.xDirection;
-	var yloc = this.y + 2 * this.yDirection;
+	var yloc = (this.y + 2 * this.yDirection * this.ySpeed);
 	this.x = xloc;
 	this.y = yloc;
 }
 
 ballShape.prototype.detectCollision = function(obj){
 	var ball = this;
-	if(ball.y - ball.radius <= obj.y + obj.height && ball.y + ball.radius >= obj.y){
-			if(ball.x >= obj.x && ball.x <= obj.x + obj.width / 4){
+	var ballEdge = ball.y - ball.radius;
+	if(ballEdge < obj.y + obj.height && ballEdge > obj.y - obj.height){
+			if(ball.x >= obj.x && ball.x <= obj.x + (obj.width / 8)){
 				ball.xDirection = -4;
 				ball.yDirection *= -1;
 				return true;
-			} else if(ball.x >= obj.x + obj.width / 4 && ball.x <= obj.x + obj.width / 3){
+			} else if(ball.x >= (obj.x + obj.width / 8) && ball.x < obj.x + ((obj.width / 8) * 2)){
 				ball.xDirection = -3;
 				ball.yDirection *= -1;
 				return true;
-			} else if(ball.x >= obj.x + obj.width / 3 && ball.x < obj.x + obj.width / 2 - ball.width){
+			} else if(ball.x >= obj.x + ((obj.width / 8) * 2) && ball.x < obj.x + ((obj.width / 8) * 3)){
 				ball.xDirection = -2;
 				ball.yDirection *= -1;
 				return true;
-			} else if(ball.x >= obj.x + Math.ceil(obj.width / 2 - ball.width) && ball.x <= obj.x + Math.ceil(obj.width / 2 + ball.width)){
+			} else if(ball.x >= obj.x + ((obj.width / 8) * 3) && ball.x <= obj.x + (obj.width / 2)){
+				ball.xDirection = -1;
 				ball.yDirection *= -1;
 				return true;
-			} else if(ball.x >= (obj.x + obj.width) - (obj.width / 2) && ball.x <= (obj.x + obj.width) - (obj.width / 3)){
+			} else if(ball.x >= obj.x + (obj.width / 2) && ball.x <= obj.x + ((obj.width / 8) * 5)){
+				ball.xDirection = 1;
+				ball.yDirection *= -1;
+				return true;
+			} else if(ball.x >= obj.x + ((obj.width / 8) * 5) && ball.x <= obj.x + ((obj.width / 8) * 6)){
 				ball.xDirection = 2;
 				ball.yDirection *= -1;
 				return true;
-			} else if(ball.x >= (obj.x + obj.width) - (obj.width / 3) && ball.x <= (obj.x + obj.width) - (obj.width / 4)){
+			} else if(ball.x >= obj.x + ((obj.width / 8) * 6) && ball.x <= obj.x + ((obj.width / 8) * 7)){
 				ball.xDirection = 3;
 				ball.yDirection *= -1;
 				return true;
-			} else if(ball.x >= (obj.x + obj.width) - (obj.width / 4) && ball.x <= (obj.x + obj.width)){
+			} else if(ball.x >= obj.x + ((obj.width / 8) * 7) && ball.x <= (obj.x + obj.width)){
 				ball.xDirection = 4;
 				ball.yDirection *= -1;
 				return true;
@@ -79,6 +86,7 @@ var Game = function(){
 }
 
 Game.prototype.start = function(){
+	var game = this;
 	this.initCanvas();
 	this.generateBlocks();
 	this.drawBlocks();
@@ -87,6 +95,19 @@ Game.prototype.start = function(){
 	this.balls = [];
 	this.initBall();
 	this.drawBall();
+	window.onmousemove = function(event){
+		if(event.clientX + game.paddle.width < game.width && event.clientX > 0){
+			game.clearPaddle();
+			game.paddle.move(event.clientX);
+			game.drawPaddle();
+		}
+	}
+	window.onkeydown = function(event){
+		if(String.fromCharCode(event.which) == game.controls.reset){
+				game.initBall();
+				game.drawBall();
+		}
+	}
 }
 
 Game.prototype.initCanvas = function(){
@@ -173,43 +194,30 @@ Game.prototype.clearBlock = function(block){
 
 Game.prototype.run = function(){
 	var game = this;
-	window.onmousemove = function(event){
-		if(event.clientX + game.paddle.width < game.width && event.clientX > 0){
-			game.clearPaddle();
-			game.paddle.move(event.clientX);
-			game.drawPaddle();
-		}
-	}
-	window.onkeydown = function(event){
-		if(String.fromCharCode(event.which) == game.controls.reset){
-				game.initBall();
-				game.drawBall();
-		}
-	}
-	game.balls.forEach(function(_, i){
-		game.balls[i].detectCollision(game.paddle);
-		game.blocks.forEach(function(_, j){
-			if(game.balls[i].detectCollision(game.blocks[j])){
-				game.clearBlock(game.blocks[j]);
+	forEach(game.balls, function(i, ball){
+		ball.detectCollision(game.paddle);
+		forEach(game.blocks, function(j, block){
+			if(ball.detectCollision(block)){
+				game.clearBlock(block);
 				game.blocks.splice(j, 1);
-			}
+			} 
 		})
-		if(game.balls[i].y - game.balls[i].radius <= 0){
-			game.balls[i].yDirection *= -1;
+		if(ball.y - ball.radius <= 0){
+			ball.yDirection *= -1;
 		}
-		if(game.balls[i].y >= game.height){
+		if(ball.y >= game.height){
 			game.clearBall(i);
 			game.balls.splice(i, 1);
 			return;
 		}
-		if(game.balls[i].x <= 0){
-			game.balls[i].xDirection *= -1;
+		if(ball.x <= 0){
+			ball.xDirection *= -1;
 		}
-		if(game.balls[i].x + game.balls[i].radius >= game.width){
-			game.balls[i].xDirection *= -1;
+		if(ball.x + ball.radius >= game.width){
+			ball.xDirection *= -1;
 		}
 		game.clearBall(i);
-		game.balls[i].move();
+		ball.move();
 		game.drawBall(i);	
 	})
 	requestAnimationFrame(function(){ game.run() });
@@ -219,6 +227,13 @@ window.onload = function(){
 	game = new Game();
 	game.start();
 	game.run();
+}
+
+var forEach = function(arr, cb){
+	for(var i in arr){
+		cb(i, arr[i])
+	}
+	return;
 }
 
 
